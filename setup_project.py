@@ -113,24 +113,40 @@ def setup_project():
         sys.exit(0)
     
     # Get target directory
-    target_dir = Path(input(f"\n📁 Target directory (default: ./{project_name}): ").strip())
-    if not target_dir.name:
+    target_dir_input = input(f"\n📁 Target directory (default: ./{project_name}): ").strip()
+    if not target_dir_input:
         target_dir = Path(f"./{project_name}")
-    
-    # Create target directory
-    if target_dir.exists():
-        print(f"❌ Directory {target_dir} already exists!")
+    else:
+        target_dir = Path(target_dir_input)
+
+    # Prevent accidental overwrite in current directory
+    if target_dir.resolve() == Path('.').resolve():
+        print("⚠️  You are about to run the template setup in the current directory!")
+        print("   This may overwrite template files and is NOT recommended.")
+        confirm_current = input("Are you sure you want to continue in the current directory? (Type 'yes' to confirm): ").strip().lower()
+        if confirm_current != 'yes':
+            print("❌ Setup cancelled. Please specify a new directory for your project.")
+            sys.exit(1)
+
+    # Create target directory if it does not exist
+    if target_dir.exists() and any(target_dir.iterdir()):
+        print(f"❌ Directory {target_dir} already exists and is not empty!")
         sys.exit(1)
-    
-    # Copy template to target directory
+    elif not target_dir.exists():
+        target_dir.mkdir(parents=True)
+
+    # Copy template to target directory (skip if current directory)
     template_dir = Path(__file__).parent
-    print(f"\n📋 Copying template to {target_dir}...")
-    shutil.copytree(template_dir, target_dir, ignore=shutil.ignore_patterns('setup_project.py', '.git', '__pycache__'))
-    
+    if target_dir.resolve() != template_dir.resolve():
+        print(f"\n📋 Copying template to {target_dir}...")
+        shutil.copytree(template_dir, target_dir, dirs_exist_ok=True, ignore=shutil.ignore_patterns('setup_project.py', '.git', '__pycache__'))
+    else:
+        print(f"\n📋 Using current directory as project root...")
+
     # Rename paths first
     print("🔧 Renaming files and directories...")
     rename_paths(target_dir, replacements)
-    
+
     # Replace template variables in all files
     print("📝 Replacing template variables...")
     for root, dirs, files in os.walk(target_dir):
@@ -138,7 +154,7 @@ def setup_project():
             file_path = Path(root) / file
             if file_path.suffix in ['.py', '.md', '.txt', '.toml', '.yml', '.yaml']:
                 replace_in_file(file_path, replacements)
-    
+
     print(f"\n🎉 Project {project_name} created successfully!")
     print(f"📁 Location: {target_dir.absolute()}")
     
