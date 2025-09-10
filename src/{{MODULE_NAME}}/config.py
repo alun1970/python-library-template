@@ -1,26 +1,24 @@
 """
-Configuration management for {{PROJECT_NAME}}.
-
-This module handles configuration settings and validation.
+Configuration module for {{PROJECT_NAME}}.
 """
 
-from typing import Any, Dict
-
+from typing import Any
 
 # Default configuration
-DEFAULT_CONFIG: Dict[str, Any] = {
+DEFAULT_CONFIG: dict[str, Any] = {
     "setting1": "default_value1",
     "setting2": "default_value2",
     "debug": False,
+    "log_level": "INFO",
 }
 
 # Global configuration instance
-_config: Dict[str, Any] = DEFAULT_CONFIG.copy()
+_config: dict[str, Any] = DEFAULT_CONFIG.copy()
 
 
-def configure_settings(config: Dict[str, Any]) -> None:
+def configure_settings(config: dict[str, Any]) -> None:
     """Configure global settings.
-    
+
     Args:
         config: Configuration dictionary to merge with defaults
     """
@@ -28,9 +26,9 @@ def configure_settings(config: Dict[str, Any]) -> None:
     _config.update(config)
 
 
-def get_settings() -> Dict[str, Any]:
+def get_settings() -> dict[str, Any]:
     """Get current configuration settings.
-    
+
     Returns:
         Current configuration dictionary
     """
@@ -39,11 +37,11 @@ def get_settings() -> Dict[str, Any]:
 
 def get_setting(key: str, default: Any = None) -> Any:
     """Get a specific setting value.
-    
+
     Args:
         key: Setting key to retrieve
         default: Default value if key not found
-        
+
     Returns:
         Setting value or default
     """

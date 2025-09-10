@@ -35,6 +35,9 @@ test-hello: ## Run hello world test
 	@echo "👋 Testing Hello World functionality..."
 	@$(VENV_PYTHON) test_hello_world.py
 
+.PHONY: test-hello-world  
+test-hello-world: test-hello ## Alias for test-hello
+
 .PHONY: demo-hello
 demo-hello: ## Run hello world demo
 	@echo "🌟 Running Hello World demo..."
@@ -67,14 +70,12 @@ typecheck: ## Run type checking
 	@echo "🔎 Running type checking..."
 	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m mypy $(SRC_DIR)
 
-.PHONY: qa
-qa: ## Run quality assurance
-	@echo "🎯 Running QA checks..."
-	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m pytest $(TESTS_DIR) -v
-	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m mypy $(SRC_DIR)
-	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m ruff check .
-	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m black --check .
-	@echo "✅ All QA checks passed!"
+.PHONY: clean
+clean: ## Clean build artifacts
+	@echo "🧹 Cleaning..."
+	@rm -rf $(DIST_DIR)/ build/ *.egg-info/ .pytest_cache/ .mypy_cache/ .ruff_cache/ htmlcov/
+	@find . -name "*.pyc" -delete
+	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 .PHONY: build
 build: ## Build packages
@@ -88,22 +89,27 @@ publish-test: build ## Publish to TestPyPI
 	@echo "📤 Publishing to TestPyPI..."
 	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m twine upload --repository testpypi $(DIST_DIR)/*
 
-.PHONY: publish
-publish: build ## Publish to PyPI
-	@echo "📤 Publishing to PyPI..."
-	@. $(VENV_DIR)/bin/activate && $(PYTHON) -m twine upload $(DIST_DIR)/*
-
-.PHONY: install-dev
-install-dev: ## Install in development mode
-	@echo "📥 Installing in development mode..."
-	@. $(VENV_DIR)/bin/activate && $(PIP) install -e ".[dev]"
-
-.PHONY: clean
-clean: ## Clean artifacts
-	@echo "🧹 Cleaning..."
-	@rm -rf $(DIST_DIR)/ build/ *.egg-info/ .pytest_cache/ .mypy_cache/ .ruff_cache/ htmlcov/
-	@find . -name "*.pyc" -delete
-	@find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+.PHONY: qa
+qa: ## Run full QA from scratch: create project, test, lint, typecheck, build dist, and test installed distribution
+	@echo "🚀 Running setup_project.py to create a new project..."
+	@python3 setup_project.py < /dev/tty
+	@echo "🔎 Detecting new project directory..."
+	@export NEWDIR="$$(ls -td -- */ | head -n1 | sed 's#/##')"; \
+	cd "$$NEWDIR" && \
+	echo "🎯 Running QA checks in $$NEWDIR..." && \
+	echo "🚀 Setting up development environment..." && \
+	make setup && \
+	echo "🧪 Running tests..." && \
+	make test && \
+	echo "🔍 Running linting..." && \
+	make lint && \
+	echo "🔎 Running type checking..." && \
+	make typecheck && \
+	echo "📦 Building packages..." && \
+	make build && \
+	echo "👋 Testing Hello World functionality..." && \
+	make test-hello && \
+	echo "✅ QA complete!"
 
 .PHONY: docs
 docs: ## Generate documentation

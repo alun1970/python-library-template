@@ -2,8 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
-
 # Note: These imports will need to be updated when the template is used
 # from {{MODULE_NAME}} import (
 #     {{MAIN_CLASS}},
@@ -167,7 +165,7 @@ class TestIntegration:
         # assert result is not None
         pass
 
-    @patch('{{MODULE_NAME}}.core.{{MAIN_CLASS}}.process')
+    @patch("{{MODULE_NAME}}.core.{{MAIN_CLASS}}.process")
     def test_mocked_processing(self, mock_process, sample_data):
         """Test with mocked processing."""
         # mock_process.return_value = "mocked result"

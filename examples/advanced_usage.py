@@ -50,7 +50,7 @@ def main():
     # data = ["item1", "item2", "item3"]
     # processed_data = helper_function(data, transform=True)
     # print(f"Processed data: {processed_data}")
-    # 
+    #
     # utility_result = utility_function(processed_data)
     # print(f"Utility result: {utility_result}\n")
 
@@ -66,12 +66,12 @@ def main():
     print("5. Batch processing:")
     # items_to_process = ["data1", "data2", "data3", "data4"]
     # instance = {{MAIN_CLASS}}()
-    # 
+    #
     # results = []
     # for i, item in enumerate(items_to_process):
     #     result = instance.process(f"{item}_batch_{i}")
     #     results.append(result)
-    # 
+    #
     # print(f"Batch results: {results}\n")
 
     print("=== Advanced Example Complete ===")

@@ -9,19 +9,9 @@ Key features:
 - Feature 3
 """
 
-from .core import (
-    {{MAIN_CLASS}},
-    main_function,
-    hello_world,
-)
-from .config import (
-    configure_settings,
-    get_settings,
-)
-from .utils import (
-    utility_function,
-    helper_function,
-)
+from .config import configure_settings, get_settings
+from .core import {{MAIN_CLASS}}, hello_world, main_function
+from .utils import helper_function, utility_function
 
 __version__ = "0.1.0"
 __author__ = "{{AUTHOR_NAME}}"
