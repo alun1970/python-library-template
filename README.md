@@ -8,7 +8,16 @@
 
 ## ⚡ Quick Start
 
-### Option 1: Use GitHub Template (Recommended)
+### Option 1: GitHub Actions (One-Click Setup) ✨
+1. Go to **Actions** tab in this repository
+2. Click **"🚀 Generate Python Project"** workflow
+3. Click **"Run workflow"** button
+4. Fill in your project details and click **"Run workflow"**
+5. Your new repository will be created automatically!
+
+> **Note**: Repository owner needs to set up a `PERSONAL_ACCESS_TOKEN` secret first (see setup instructions below)
+
+### Option 2: Use GitHub Template (Traditional)
 1. Click **"Use this template"** button above
 2. Create your new repository  
 3. Clone your new repository
@@ -17,7 +26,7 @@
    python setup_project.py
    ```
 
-### Option 2: Manual Setup
+### Option 3: Manual Setup
 ```bash
 # Clone this template
 git clone https://github.com/alun1970/python-project-template.git my-new-project
@@ -81,6 +90,26 @@ your-project/
 ```
 
 ## 🚀 Getting Started
+
+### For Repository Owners: GitHub Actions Setup
+
+To enable the one-click project generation:
+
+1. **Create a Personal Access Token**:
+   - Go to [GitHub Settings > Personal Access Tokens](https://github.com/settings/tokens)
+   - Click "Generate new token (classic)"
+   - Select scopes: `repo` (Full control of private repositories)
+   - Copy the generated token
+
+2. **Add the token as a repository secret**:
+   - Go to your repository **Settings**
+   - Navigate to **Secrets and variables** > **Actions**
+   - Click **"New repository secret"**
+   - Name: `PERSONAL_ACCESS_TOKEN`
+   - Value: Paste your token
+   - Click **"Add secret"**
+
+### For Project Generation:
 
 1. **Use this template** to create your repository
 2. **Clone** your new repository

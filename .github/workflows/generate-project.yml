@@ -1,0 +1,169 @@
+name: 🚀 Generate Python Project
+
+# This workflow creates a new Python project repository based on this template.
+# 
+# SETUP REQUIRED:
+# 1. Create a Personal Access Token (PAT) with 'repo' permissions at:
+#    https://github.com/settings/tokens
+# 2. Add it as a secret named 'PERSONAL_ACCESS_TOKEN' in this repository:
+#    Repository Settings > Secrets and Variables > Actions > New repository secret
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: 'Project name (e.g., my-awesome-project)'
+        required: true
+        type: string
+      project_description:
+        description: 'Project description'
+        required: true
+        type: string
+        default: 'A Python library generated from python-library-template'
+      author_name:
+        description: 'Author name'
+        required: true
+        type: string
+      author_email:
+        description: 'Author email'
+        required: true
+        type: string
+      github_username:
+        description: 'GitHub username (where repo will be created)'
+        required: true
+        type: string
+      target_repo_name:
+        description: 'Repository name (leave empty to use project name)'
+        required: false
+        type: string
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout template
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Validate inputs and set variables
+        id: validate
+        run: |
+          # Set target repository name (use project name if not provided)
+          TARGET_REPO="${{ github.event.inputs.target_repo_name }}"
+          if [ -z "$TARGET_REPO" ]; then
+            TARGET_REPO="${{ github.event.inputs.project_name }}"
+          fi
+          echo "target_repo=$TARGET_REPO" >> $GITHUB_OUTPUT
+          
+          # Validate email format
+          EMAIL="${{ github.event.inputs.author_email }}"
+          if [[ ! "$EMAIL" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+            echo "❌ Invalid email format: $EMAIL"
+            exit 1
+          fi
+          
+          # Validate project name format
+          PROJECT="${{ github.event.inputs.project_name }}"
+          if [[ ! "$PROJECT" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$ ]]; then
+            echo "❌ Invalid project name format: $PROJECT"
+            echo "Project name must contain only letters, numbers, dots, hyphens, and underscores"
+            exit 1
+          fi
+          
+          echo "✅ All inputs validated successfully"
+          
+      - name: Generate project
+        run: |
+          # Create project using our setup script with automated input
+          python3 -c "
+          import sys
+          sys.path.append('.')
+          from setup_project import replace_in_file, rename_paths
+          from pathlib import Path
+          import shutil
+          
+          # Define replacements from inputs
+          replacements = {
+              '{{PROJECT_NAME}}': '${{ github.event.inputs.project_name }}',
+              '{{MODULE_NAME}}': '${{ github.event.inputs.project_name }}'.replace('-', '_').lower(),
+              '{{MAIN_CLASS}}': ''.join(word.capitalize() for word in '${{ github.event.inputs.project_name }}'.replace('-', '_').split('_')),
+              '{{PROJECT_DESCRIPTION}}': '${{ github.event.inputs.project_description }}',
+              '{{AUTHOR_NAME}}': '${{ github.event.inputs.author_name }}',
+              '{{AUTHOR_EMAIL}}': '${{ github.event.inputs.author_email }}',
+              '{{GITHUB_USERNAME}}': '${{ github.event.inputs.github_username }}'
+          }
+          
+          # Create target directory
+          target_dir = Path('generated-project')
+          if target_dir.exists():
+              shutil.rmtree(target_dir)
+              
+          # Copy template
+          shutil.copytree('.', target_dir, ignore=shutil.ignore_patterns('.git', '*.pyc', '__pycache__', 'venv', '*.egg-info', '.pytest_cache', '.github'))
+          
+          # Apply replacements to all files
+          for file_path in target_dir.rglob('*'):
+              if file_path.is_file() and not any(skip in str(file_path) for skip in ['.git', '__pycache__', '.pyc']):
+                  replace_in_file(file_path, replacements)
+                  
+          # Rename files and directories  
+          rename_paths(target_dir, replacements)
+          
+          print('✅ Project generated successfully')
+          "
+          
+      - name: Remove template-specific files
+        run: |
+          cd generated-project
+          rm -f setup_project.py
+          rm -rf .github/workflows/generate-project.yml
+          
+      - name: Create target repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          TARGET_REPO: ${{ steps.validate.outputs.target_repo }}
+          GITHUB_USERNAME: ${{ github.event.inputs.github_username }}
+        run: |
+          # Create new repository
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/user/repos \
+            -d "{\"name\":\"$TARGET_REPO\",\"description\":\"${{ github.event.inputs.project_description }}\",\"private\":false}"
+          
+      - name: Push generated project
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          TARGET_REPO: ${{ steps.validate.outputs.target_repo }}
+          GITHUB_USERNAME: ${{ github.event.inputs.github_username }}
+        run: |
+          cd generated-project
+          git init
+          git config user.name "${{ github.event.inputs.author_name }}"
+          git config user.email "${{ github.event.inputs.author_email }}"
+          git add .
+          git commit -m "Initial commit: Generated from python-library-template
+          
+          🚀 Generated project: ${{ github.event.inputs.project_name }}
+          📝 Description: ${{ github.event.inputs.project_description }}
+          👤 Author: ${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>
+          
+          This project was generated from alun1970/python-library-template"
+          
+          git remote add origin https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_USERNAME/$TARGET_REPO.git
+          git branch -M main
+          git push -u origin main
+          
+      - name: Run initial QA on generated project
+        run: |
+          cd generated-project
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install -e ".[dev]"
+          python3 -m pytest tests/ -v
+          python3 -m ruff check .
+          echo "✅ Generated project passes all QA checks!"
